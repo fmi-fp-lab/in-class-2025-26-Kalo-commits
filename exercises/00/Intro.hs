@@ -185,8 +185,11 @@ fact n =
 -- >>> fib 8
 -- 34
 
-fib :: Integer -> Integer
-fib = undefined
+fib :: Int -> Int
+fib 0 = 0
+fib 1 = 1
+fib n = fib (n-1) + fib (n-2)
+
 
 -- use the following "mathematical definition" to implement addition on natural numbers:
 -- myPlus x y = { y                        | x == 0    }
@@ -202,8 +205,13 @@ fib = undefined
 -- >>> myPlus 0 42
 -- 42
 
-myPlus :: Integer -> Integer -> Integer
-myPlus n m = undefined
+myPlus :: Int -> Int -> Int
+myPlus x y =
+  if x == 0
+    then y
+    else succ (myPlus (pred x) y)
+
+
 
 -- same as above, implement multiplication on natural numbers recursively, using addition instead of succ
 -- EXAMPLES
@@ -216,9 +224,11 @@ myPlus n m = undefined
 -- >>> myMult 1 42
 -- 42
 myMult :: Integer -> Integer -> Integer
-myMult n m = undefined
+myMult x y = 
+  if y == 0 
+    then 0 
+    else x + myMult x (y-1)
 
--- Implement "fast exponentiation".
 -- This uses the following property:
 --
 -- In the case of the exponent(n) being even
@@ -232,29 +242,36 @@ myMult n m = undefined
 -- >>> fastPow 2 6
 -- 64
 fastPow :: Integer -> Integer -> Integer
-fastPow = undefined
-
+fastPow x pow
+   | pow == 0 = 1
+   | pow < 0 = 1 `div` fastPow x (-pow)
+   | even pow = fastPow (x*x) (div pow 2)
+   |otherwise =  x * fastPow x (pow -1)
+  
 -- Define two mutually recursive functions which check whether a number is even or odd.
 -- Assume that the input is non-negative.
 --
 -- EXAMPLES
 -- >>> isOdd 3
--- True
+-- Variable not in scope: isOdd :: Integer -> t
 --
 -- >>> isOdd 4
--- False
+-- Variable not in scope: isOdd :: Integer -> t
 --
 -- >>> isEven 5
--- False
+-- Variable not in scope: isEven :: Integer -> t
 --
--- >>> isEven 6
--- True
+-- >>> myEven 7
+-- False
 
-isEven :: Integer -> Bool
-isEven x = undefined
+myEven :: Int -> Bool
+myOdd :: Int -> Bool
 
-isOdd :: Integer -> Bool
-isOdd x = undefined
+myEven 0 = True
+myEven x = myOdd (x-1)
+  
+myOdd 0 = False 
+myOdd x = myEven (x-1)
 
 -- Define a function to check whether a given Integer is a prime number.
 -- Assume that the input is non-negative.
@@ -303,7 +320,12 @@ isOdd x = undefined
 -- >>> isPrime 13
 -- True
 
-isPrime :: Integer -> Bool
-isPrime n = undefined
+isPrime :: Int-> Bool
+isPrime n 
+  | n < 2 = False
+  | otherwise = not (hasDivisor n (n-1))
+  where hasDivisor _ 1 = False
+        hasDivisor x d = (x `rem` d == 0) || hasDivisor x (d -1)
+
 
 -- vim: foldmethod=marker:
