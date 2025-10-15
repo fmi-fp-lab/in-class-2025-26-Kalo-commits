@@ -10,6 +10,11 @@
 {-# OPTIONS_GHC -fwarn-unused-matches #-}
 
 module ADTs where
+import Data.Char (GeneralCategory(SpacingCombiningMark))
+import Data.Time.Format.ISO8601 (yearFormat)
+import GHC.Compact (compactAddWithSharing, compact)
+import Distribution.Compat.Lens (_1)
+import Distribution.Simple.Test.Log (suiteError)
 
 -- TODO: talk about
 -- - join + write on discord
@@ -46,27 +51,35 @@ data RPS = Rock | Paper | Scissors
 -- >>> beats Paper Rock
 -- True
 beats :: RPS -> RPS -> Bool
-beats = undefined
+beats Paper Rock = True
+beats Rock Scissors = True
+beats Scissors Paper = True
+beats _ _ = False
 
 -- TASK:
 -- Define the "next" throw you can do in the "usual" ordering of RPS
 -- i.e. `next x` should be the throw that beats x
 
--- >>> next Rock
--- Paper
+-- >>> next Scissors
+-- Rock
 next :: RPS -> RPS
-next = undefined
+next Rock = Paper
+next Paper = Scissors
+next _ = Rock
 
 -- TASK:
 -- Define what it means for two RPS values to be equal
 -- Use pattern matching and use _ matches!
 
--- >>> eqRPS Rock Rock
--- True
+-- >>> eqRPS Rock Scissors
+-- False
 -- >>> eqRPS Rock Paper
 -- False
 eqRPS :: RPS -> RPS -> Bool
-eqRPS = undefined
+eqRPS Rock Rock  =  True
+eqRPS Scissors Scissors = True
+eqRPS Paper Paper = True
+eqRPS _ _ = False
 
 -- TASK:
 -- Define a shorter version of beats using next and eqRPS
@@ -74,11 +87,10 @@ eqRPS = undefined
 -- >>> beats' Rock Paper
 -- True
 -- >>> beats' Paper Scissors
--- True
+-- False
 
 beats' :: RPS -> RPS -> Bool
-beats' = undefined
-
+beats' x  y = next x `eqRPS` y
 ------------
 -- Points --
 ------------
@@ -121,8 +133,8 @@ data Nat = Zero | Succ Nat
 -- TASK:
 -- Convert an Integer to Nat
 
--- >>> integerToNat 3
--- Succ (Succ (Succ Zero))
+-- >>> integerToNat 4
+-- Succ (Succ (Succ (Succ Zero)))
 
 integerToNat :: Integer -> Nat
 integerToNat x =
@@ -133,8 +145,8 @@ integerToNat x =
 -- TASK:
 -- Convert a Nat back to an Integer
 
--- >>> natToInteger (Succ (Succ Zero))
--- 2
+-- >>> natToInteger (Succ (Succ (Succ Zero)))
+-- 3
 
 natToInteger :: Nat -> Integer
 natToInteger Zero = 0
@@ -164,16 +176,22 @@ addNat (Succ n1) n2 = Succ (addNat n1 n2)
 -- Succ (Succ (Succ (Succ (Succ (Succ Zero)))))
 
 multNat :: Nat -> Nat -> Nat
-multNat = undefined
+multNat Zero _ = Zero
+multNat (Succ x) y  =  multNat x y  `addNat` y
+
 
 -- TASK:
 -- Compare two Nats, returning an Ordering
 
--- >>> compareNat (Succ Zero) Zero
--- GT
+-- >>> compareNat (Succ Zero) (Succ Zero) 
+-- LT
 
 compareNat :: Nat -> Nat -> Ordering
-compareNat = undefined
+compareNat Zero (Succ _) = LT
+compareNat (Succ _) Zero = GT
+compareNat Zero Zero = EQ
+compareNat (Succ x) (Succ y) = compareNat x y
+
 
 -- TASK:
 -- Return the maximum of two Nats
@@ -182,8 +200,10 @@ compareNat = undefined
 -- Succ (Succ Zero)
 
 maxNat :: Nat -> Nat -> Nat
-maxNat = undefined
-
+maxNat x y 
+  | compareNat x y == LT = y
+  | compareNat x y == GT = x
+  | otherwise = x
 -----------------
 -- Expressions --
 -----------------
@@ -205,11 +225,13 @@ infixr 8 `Mult`
 -- 3
 -- >>> eval (Plus (Val 3) (Val 4))
 -- 7
--- >>> eval (Mult (Val 3) (Val 4))
--- 12
+-- >>> eval (Mult (Val 5) (Val 4))
+-- 20
 
 eval :: Expr -> Integer
-eval = undefined
+eval (Val x) = x 
+eval (Plus x y) = eval x + eval y
+eval (Mult x y) = eval x * eval y
 
 -- TASK:
 -- Extend the Expr language with If expressions
@@ -219,32 +241,45 @@ eval = undefined
 -- Belote --
 ------------
 
+-- >>>
+
 -- Data type for Ranks in a card game
-data Rank
+data Rank = Ace  | King | Queen | Joker | Ten | Nine | Eight | Seven 
   deriving (Show)
 
 -- Data type for Suits in a card game
-data Suit
+data Suit = Spades | Hearts | Diamonds | Clubs
   deriving (Show)
 
 -- TASK:
 -- Check if two suits are equal
 suitEquals :: Suit -> Suit -> Bool
-suitEquals = undefined
+suitEquals  Spades Spades = True
+suitEquals Hearts Hearts = True
+suitEquals Diamonds Diamonds = True
+suitEquals Clubs Clubs = True
+suitEquals _ _ = False
+
+-- >>> suitEquals Diamonds Hearts
+-- False
+
 
 -- Record syntax for representing a Card
-data Card
+data Card = MkCard {rank :: Rank , suit :: Suit}
   deriving (Show)
 
+
 -- Data type for Contracts in the Belote game
-data Contract
+data Contract = NoTrumps | AllTrumps | ColorGame Suit
   deriving (Show)
+
 
 -- TASK:
 -- Check if a card is of a trump suit based on a given contract
 isTrump :: Contract -> Card -> Bool
-isTrump = undefined
-
+isTrump AllTrumps (MkCard _ _) = True
+isTrump NoTrumps (MkCard _ _ ) = False
+isTrump (ColorGame x) (MkCard _ y) = x `suitEquals` y
 -- TASK:
 -- Assign a numerical power value to a card based on the contract
 -- Ensure that higher power values represent stronger cards
@@ -267,31 +302,33 @@ cardPower = undefined
 --
 -- HINT:
 -- The intended solution has 4 constructors
-data CardRelation
-  deriving (Show)
 
--- TASK:
--- Given a contract, calculate how two cards relate
-relateCards :: Contract -> Card -> Card -> CardRelation
-relateCards = undefined
 
--- TASK:
--- Given a contract and two cards, return the winning card
--- Assume the first card is played first
-fight :: Contract -> Card -> Card -> Card
-fight = undefined
+-- -- data CardRelation
+-- --   deriving (Show)
 
--- Data type for a trick (игра, разигравка, ръка, рунд), consisting of four cards
-data Trick
-  deriving (Show)
+-- -- TASK:
+-- -- Given a contract, calculate how two cards relate
+-- relateCards :: Contract -> Card -> Card -> CardRelation
+-- relateCards = undefined
 
--- TASK:
--- Given a contract and a Trick, determine the winning card
--- Remember that the leftmost card was played first
-winner :: Contract -> Trick -> Card
-winner = undefined
+-- -- TASK:
+-- -- Given a contract and two cards, return the winning card
+-- -- Assume the first card is played first
+-- fight :: Contract -> Card -> Card -> Card
+-- fight = undefined
 
--- TASK:
--- Check if a Trick could have been played according to the rules of Belote
-isValid :: Contract -> Trick -> Bool
-isValid = undefined
+-- -- Data type for a trick (игра, разигравка, ръка, рунд), consisting of four cards
+-- data Trick
+--   deriving (Show)
+
+-- -- TASK:
+-- -- Given a contract and a Trick, determine the winning card
+-- -- Remember that the leftmost card was played first
+-- winner :: Contract -> Trick -> Card
+-- winner = undefined
+
+-- -- TASK:
+-- -- Check if a Trick could have been played according to the rules of Belote
+-- isValid :: Contract -> Trick -> Bool
+-- isValid = undefined
