@@ -244,7 +244,7 @@ eval (Mult x y) = eval x * eval y
 -- >>>
 
 -- Data type for Ranks in a card game
-data Rank = Ace  | King | Queen | Joker | Ten | Nine | Eight | Seven 
+data Rank = Ace  | King | Queen | Jack | Ten | Nine | Eight | Seven 
   deriving (Show)
 
 -- Data type for Suits in a card game
@@ -280,11 +280,41 @@ isTrump :: Contract -> Card -> Bool
 isTrump AllTrumps (MkCard _ _) = True
 isTrump NoTrumps (MkCard _ _ ) = False
 isTrump (ColorGame x) (MkCard _ y) = x `suitEquals` y
+
+karta :: Card
+karta = MkCard Jack Spades
+
+
 -- TASK:
 -- Assign a numerical power value to a card based on the contract
 -- Ensure that higher power values represent stronger cards
+
+ -- ace ten king queen Jack nine eight seven
+
 cardPower :: Contract -> Card -> Integer
-cardPower = undefined
+cardPower contract (MkCard rank suit)
+  | isTrump contract (MkCard rank suit)  = case rank of
+      Jack   -> 20  
+      Nine   -> 14
+      Ace    -> 11
+      Ten    -> 10
+      King   -> 4
+      Queen  -> 3
+      Eight  -> 0
+      Seven  -> 0
+  | otherwise = case rank of
+      Ace    -> 11
+      Ten    -> 10
+      King   -> 4
+      Queen  -> 3
+      Jack   -> 2  
+      Nine   -> 0
+      Eight  -> 0
+      Seven  -> 0
+
+
+-- >>> :t (karta)
+-- (karta) :: Card
 
 -- TASK:
 -- A data type to describe the different ways two cards can relate, given a contract
