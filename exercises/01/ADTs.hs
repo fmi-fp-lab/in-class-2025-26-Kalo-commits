@@ -265,7 +265,7 @@ suitEquals _ _ = False
 
 
 -- Record syntax for representing a Card
-data Card = MkCard {rank :: Rank , suit :: Suit}
+data Card = MkCard Rank Suit
   deriving (Show)
 
 
